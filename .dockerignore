@@ -1,0 +1,48 @@
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Development
+node_modules/
+.venv/
+venv/
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+
+# Build artifacts
+build/
+dist/
+*.pyc
+*.egg-info/
+
+# Testing
+.pytest_cache/
+coverage/
+.coverage
+
+# Documentation
+README.md
+docs/
+*.md
