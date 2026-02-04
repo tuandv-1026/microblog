@@ -1,0 +1,1016 @@
+openapi: 3.0.3
+info:
+  title: Personal Blog Platform API
+  description: REST API for personal blog with Markdown rendering, authentication, and engagement features
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.microblog.example.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User registration, login, logout
+  - name: Posts
+    description: Blog post CRUD operations
+  - name: Categories
+    description: Category management and filtering
+  - name: Comments
+    description: Comment creation and retrieval
+  - name: Reactions
+    description: Emoji reactions to posts
+  - name: Search
+    description: Search posts by title or author
+  - name: About
+    description: About Me page content
+
+paths:
+  /register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validation error (invalid email, weak password, duplicate username/email)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user and create session
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful, session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session_id=abc123; HttpOnly; Secure; SameSite=Lax; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user and invalidate session
+      operationId: logoutUser
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Logout successful, session cookie cleared
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts:
+    get:
+      tags: [Posts]
+      summary: List published posts with pagination and sorting
+      operationId: listPosts
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, oldest, likes, views]
+            default: newest
+          description: Sort order (newest=created_at DESC, oldest=created_at ASC, likes=like_count DESC, views=view_count DESC)
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug (e.g., "technology")
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-indexed)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Posts per page
+      responses:
+        '200':
+          description: List of published posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostPreview'
+                  total:
+                    type: integer
+                    example: 42
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 20
+    
+    post:
+      tags: [Posts]
+      summary: Create a new post (draft or published)
+      operationId: createPost
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+        '400':
+          description: Validation error (missing title, empty content for publish)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}:
+    get:
+      tags: [Posts]
+      summary: Get post detail by ID
+      operationId: getPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      responses:
+        '200':
+          description: Post details with rendered Markdown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags: [Posts]
+      summary: Update existing post (author only)
+      operationId: updatePost
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostRequest'
+      responses:
+        '200':
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not post author)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags: [Posts]
+      summary: Delete post (author only)
+      operationId: deletePost
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      responses:
+        '204':
+          description: Post deleted successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not post author)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}/publish:
+    post:
+      tags: [Posts]
+      summary: Publish a draft post (author only)
+      operationId: publishPost
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      responses:
+        '200':
+          description: Post published successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+        '400':
+          description: Post already published or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not post author)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}/comments:
+    get:
+      tags: [Comments]
+      summary: Get comments for a post
+      operationId: getPostComments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      responses:
+        '200':
+          description: List of comments (chronological order)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags: [Comments]
+      summary: Create a comment on a post (authenticated only)
+      operationId: createComment
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Validation error (empty content, post is draft)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /comments/{id}:
+    delete:
+      tags: [Comments]
+      summary: Delete a comment (author or post author only)
+      operationId: deleteComment
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Comment ID
+      responses:
+        '204':
+          description: Comment deleted successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not comment author or post author)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{id}/reactions:
+    get:
+      tags: [Reactions]
+      summary: Get reaction counts for a post
+      operationId: getPostReactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      responses:
+        '200':
+          description: Reaction counts by type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReactionSummary'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags: [Reactions]
+      summary: Toggle a reaction on a post (authenticated only)
+      operationId: toggleReaction
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Post ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleReactionRequest'
+      responses:
+        '200':
+          description: Reaction toggled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  action:
+                    type: string
+                    enum: [added, removed]
+                    example: added
+                  reaction_type:
+                    type: string
+                    enum: [like, haha, angry, sad]
+                    example: like
+        '400':
+          description: Validation error (invalid reaction type, post is draft)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: List all categories with post counts
+      operationId: listCategories
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [post_count, name]
+            default: post_count
+          description: Sort by post count (descending) or name (alphabetical)
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+
+  /categories/{slug}:
+    get:
+      tags: [Categories]
+      summary: Get category details by slug
+      operationId: getCategory
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Category slug (e.g., "technology")
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Search posts by title or author
+      operationId: searchPosts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Search query (matches title or author username)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostPreview'
+                  total:
+                    type: integer
+                    example: 5
+                  query:
+                    type: string
+                    example: "fastapi"
+        '400':
+          description: Validation error (empty query)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /about:
+    get:
+      tags: [About]
+      summary: Get About Me page content
+      operationId: getAboutPage
+      responses:
+        '200':
+          description: About page content (rendered Markdown)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutPageResponse'
+    
+    put:
+      tags: [About]
+      summary: Update About Me page content (admin only)
+      operationId: updateAboutPage
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAboutPageRequest'
+      responses:
+        '200':
+          description: About page updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutPageResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: Session cookie set by /login endpoint
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+        - password_confirm
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_-]+$'
+          example: johndoe
+        password:
+          type: string
+          minLength: 8
+          example: SecurePass123
+        password_confirm:
+          type: string
+          minLength: 8
+          example: SecurePass123
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: SecurePass123
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        username:
+          type: string
+          example: johndoe
+        role:
+          type: string
+          enum: [author, admin]
+          example: author
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-04T10:30:00Z"
+
+    CreatePostRequest:
+      type: object
+      required:
+        - title
+        - content
+        - status
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Getting Started with FastAPI"
+        content:
+          type: string
+          minLength: 1
+          example: "# Introduction\n\nFastAPI is a modern web framework..."
+        status:
+          type: string
+          enum: [draft, published]
+          example: draft
+        category_ids:
+          type: array
+          items:
+            type: integer
+          example: [1, 3]
+
+    UpdatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Updated Title"
+        content:
+          type: string
+          minLength: 1
+          example: "# Updated Content\n\n..."
+        category_ids:
+          type: array
+          items:
+            type: integer
+          example: [1, 2, 4]
+
+    PostPreview:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        title:
+          type: string
+          example: "Getting Started with FastAPI"
+        excerpt:
+          type: string
+          description: First 150 characters of content (Markdown stripped)
+          example: "Introduction FastAPI is a modern web framework for building APIs with Python..."
+        author:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: johndoe
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryResponse'
+        view_count:
+          type: integer
+          example: 342
+        like_count:
+          type: integer
+          example: 28
+        comment_count:
+          type: integer
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-01T14:30:00Z"
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-02-01T15:00:00Z"
+
+    PostDetail:
+      allOf:
+        - $ref: '#/components/schemas/PostPreview'
+        - type: object
+          properties:
+            content_html:
+              type: string
+              description: Rendered and sanitized HTML from Markdown
+              example: "<h1>Introduction</h1><p>FastAPI is...</p>"
+            content_markdown:
+              type: string
+              description: Raw Markdown content (only for post author)
+              example: "# Introduction\n\nFastAPI is..."
+            updated_at:
+              type: string
+              format: date-time
+              example: "2026-02-03T09:15:00Z"
+
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Great article! Very helpful."
+
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        post_id:
+          type: integer
+          example: 42
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 5
+            username:
+              type: string
+              example: janedoe
+        content:
+          type: string
+          example: "Great article! Very helpful."
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-04T11:20:00Z"
+
+    ToggleReactionRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [like, haha, angry, sad]
+          example: like
+
+    ReactionSummary:
+      type: object
+      properties:
+        post_id:
+          type: integer
+          example: 42
+        reactions:
+          type: object
+          properties:
+            like:
+              type: integer
+              example: 28
+            haha:
+              type: integer
+              example: 5
+            angry:
+              type: integer
+              example: 1
+            sad:
+              type: integer
+              example: 0
+        user_reactions:
+          type: array
+          items:
+            type: string
+            enum: [like, haha, angry, sad]
+          description: Reaction types the current user has added (empty if not authenticated)
+          example: [like]
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Technology
+        slug:
+          type: string
+          example: technology
+        post_count:
+          type: integer
+          example: 15
+
+    AboutPageResponse:
+      type: object
+      properties:
+        content_html:
+          type: string
+          description: Rendered and sanitized HTML from Markdown
+          example: "<h1>About Me</h1><p>I'm a software engineer...</p>"
+        content_markdown:
+          type: string
+          description: Raw Markdown content (only for admin)
+          example: "# About Me\n\nI'm a software engineer..."
+        profile_photo_url:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://example.com/profile.jpg"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-01-15T10:00:00Z"
+
+    UpdateAboutPageRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          example: "# About Me\n\nI'm a software engineer passionate about..."
+        profile_photo_url:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://example.com/profile.jpg"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Validation error"
+        detail:
+          type: string
+          example: "Password must be at least 8 characters"
+        status_code:
+          type: integer
+          example: 400
