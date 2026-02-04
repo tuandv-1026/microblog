@@ -18,6 +18,7 @@ function RegisterPage() {
 
     try {
       await api.post('/auth/register', formData);
+      alert('Registration successful! Please login.');
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed');

@@ -16,7 +16,7 @@ function LoginPage() {
 
     try {
       await api.post('/auth/login', formData);
-      navigate('/');
+      window.location.href = '/'; // Force reload to update auth state
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed');
     }
