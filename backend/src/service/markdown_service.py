@@ -18,10 +18,11 @@ ALLOWED_TAGS = [
 
 # Allowed HTML attributes
 ALLOWED_ATTRIBUTES = {
-    '*': ['class', 'id'],
+    '*': ['class', 'id', 'title'],
     'a': ['href', 'title', 'rel'],
-    'img': ['src', 'alt', 'title', 'width', 'height'],
+    'img': ['src', 'alt', 'title', 'width', 'height', 'class'],
     'code': ['class'],
+    'span': ['class', 'title'],
 }
 
 # Allowed URL protocols
@@ -38,10 +39,17 @@ class MarkdownService:
                 'extra',
                 'nl2br',
                 'sane_lists',
+                'pymdownx.emoji',
                 FencedCodeExtension(),
                 CodeHiliteExtension(css_class='highlight'),
                 TableExtension(),
             ],
+            extension_configs={
+                'pymdownx.emoji': {
+                    'emoji_index': lambda: {},
+                    'emoji_generator': lambda name, *args: name,
+                }
+            },
             output_format='html5',
         )
     

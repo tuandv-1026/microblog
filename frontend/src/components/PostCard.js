@@ -4,6 +4,18 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 function PostCard({ post }) {
+  // Create excerpt from HTML content if excerpt is not available
+  const getExcerpt = () => {
+    if (post.excerpt) {
+      return post.excerpt;
+    }
+    // Extract first 150 chars from HTML content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = post.content_html;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    return textContent.substring(0, 150) + (textContent.length > 150 ? '...' : '');
+  };
+
   return (
     <article className="post-card">
       <h2 className="post-title">
@@ -23,9 +35,14 @@ function PostCard({ post }) {
         )}
       </div>
       
-      <div className="post-excerpt">
-        {post.excerpt || 'No excerpt available...'}
-      </div>
+      <div 
+        className="post-excerpt"
+        dangerouslySetInnerHTML={{ 
+          __html: post.excerpt 
+            ? post.excerpt 
+            : (post.content_html.substring(0, 200) + (post.content_html.length > 200 ? '...' : ''))
+        }}
+      />
       
       <Link to={`/posts/${encodeURIComponent(post.slug)}`} className="read-more">
         Read more →
