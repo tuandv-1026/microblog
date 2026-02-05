@@ -21,18 +21,35 @@ async def seed_data():
     """Seed the database with sample data."""
     async with AsyncSessionLocal() as session:
         try:
-            # Create admin user
+            # Create 3 users (1 admin, 2 regular authors)
+            users = []
+            
+            # Admin user
             admin = UserModel(
                 username="admin",
                 email="admin@example.com",
                 hashed_password=auth_service.hash_password("admin123"),
                 full_name="Blog Administrator",
-                bio="The main author of this blog",
+                bio="The main author and administrator of this blog",
             )
             session.add(admin)
+            users.append(admin)
+            
+            # Regular users
+            for i in range(2):
+                user = UserModel(
+                    username=f"author{i+1}",
+                    email=f"author{i+1}@example.com",
+                    hashed_password=auth_service.hash_password(f"password{i+1}"),
+                    full_name=fake.name(),
+                    bio=fake.sentence(nb_words=10),
+                )
+                session.add(user)
+                users.append(user)
+            
             await session.flush()
             
-            # Create categories
+            # Create 5 categories
             categories = []
             category_names = ["Technology", "Travel", "Food", "Lifestyle", "Tutorial"]
             for name in category_names:
@@ -46,7 +63,7 @@ async def seed_data():
             
             await session.flush()
             
-            # Create 10 sample posts
+            # Create 10 sample posts (8 published, 2 drafts)
             for i in range(10):
                 title = fake.sentence(nb_words=6).rstrip('.')
                 slug = title.lower().replace(' ', '-').replace(',', '')[:50]
@@ -82,9 +99,18 @@ async def seed_data():
                 html_content = markdown_service.render(markdown_content)
                 excerpt = markdown_service.generate_excerpt(markdown_content)
                 
-                # Random publish date in the past
-                days_ago = fake.random_int(min=1, max=90)
-                published_at = datetime.utcnow() - timedelta(days=days_ago)
+                # First 8 posts are published, last 2 are drafts
+                is_draft = i >= 8
+                status = PostStatusEnum.DRAFT if is_draft else PostStatusEnum.PUBLISHED
+                
+                # Random publish date in the past (only for published posts)
+                published_at = None
+                if not is_draft:
+                    days_ago = fake.random_int(min=1, max=90)
+                    published_at = datetime.utcnow() - timedelta(days=days_ago)
+                
+                # Assign posts to different authors
+                author = users[i % len(users)]
                 
                 post = PostModel(
                     title=title,
@@ -92,8 +118,8 @@ async def seed_data():
                     content_markdown=markdown_content,
                     content_html=html_content,
                     excerpt=excerpt,
-                    status=PostStatusEnum.PUBLISHED,
-                    author_id=admin.id,
+                    status=status,
+                    author_id=author.id,
                     published_at=published_at,
                 )
                 
@@ -109,9 +135,13 @@ async def seed_data():
             
             await session.commit()
             print("✅ Database seeded successfully!")
-            print(f"   - Created 1 admin user (username: admin, password: admin123)")
-            print(f"   - Created {len(categories)} categories")
-            print(f"   - Created 10 published posts")
+            print(f"   - Created {len(users)} users:")
+            print(f"     • admin / admin123 (administrator)")
+            print(f"     • author1 / password1")
+            print(f"     • author2 / password2")
+            print(f"   - Created {len(categories)} categories: {', '.join([c.name for c in categories])}")
+            print(f"   - Created 10 posts (8 published, 2 drafts)")
+            print(f"\n🎉 You can now login and start exploring the blog!")
             
         except Exception as e:
             await session.rollback()

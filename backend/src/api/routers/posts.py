@@ -1,6 +1,7 @@
 """Posts router for CRUD operations."""
 
-from fastapi import APIRouter, Depends, HTTPException, Cookie
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 
@@ -15,6 +16,7 @@ from src.usecase.post_usecase import (
     DeletePostUseCase,
 )
 from src.domain.entities import PostStatus
+from src.service.view_counter_service import view_counter_service
 
 router = APIRouter()
 
@@ -80,14 +82,32 @@ async def get_posts(
 @router.get("/{slug}", response_model=PostResponse)
 async def get_post(
     slug: str,
+    response: Response,
     db: AsyncSession = Depends(get_db),
+    view_session_id: Optional[str] = Cookie(None),
 ):
-    """Get a post by slug."""
+    """Get a post by slug and increment view count."""
     post_repo = SQLAlchemyPostRepository(db)
     post = await post_repo.get_by_slug(slug)
     
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Generate or use existing view session ID
+    if not view_session_id:
+        view_session_id = str(uuid.uuid4())
+        response.set_cookie(
+            key="view_session_id",
+            value=view_session_id,
+            max_age=86400,  # 24 hours
+            httponly=True,
+            samesite="lax",
+        )
+    
+    # Increment view count if this is a new view in this session
+    if view_counter_service.should_increment_view(post.id, view_session_id):
+        post.view_count += 1
+        await post_repo.update(post)
     
     return PostResponse.model_validate(post)
 
