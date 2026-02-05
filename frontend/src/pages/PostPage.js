@@ -21,11 +21,6 @@ function PostPage() {
   });
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-    checkAuth();
-  }, [slug]);
-
   const checkAuth = async () => {
     try {
       const response = await api.get('/auth/me');
@@ -35,29 +30,50 @@ function PostPage() {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch post
-      const postResponse = await api.get(`/posts/${slug}`);
-      setPost(postResponse.data);
-      
-      // Fetch comments
-      const commentsResponse = await api.get(`/comments/post/${postResponse.data.id}`);
-      setComments(commentsResponse.data);
-      
-      // Fetch reactions
-      const reactionsResponse = await api.get(`/reactions/post/${postResponse.data.id}/summary`);
-      setReactions(reactionsResponse.data);
-      
-    } catch (err) {
-      setError('Post not found');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const abortController = new AbortController();
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch post
+        const postResponse = await api.get(`/posts/${slug}`, {
+          signal: abortController.signal
+        });
+        setPost(postResponse.data);
+        
+        // Fetch comments
+        const commentsResponse = await api.get(`/comments/post/${postResponse.data.id}`, {
+          signal: abortController.signal
+        });
+        setComments(commentsResponse.data);
+        
+        // Fetch reactions
+        const reactionsResponse = await api.get(`/reactions/post/${postResponse.data.id}/summary`, {
+          signal: abortController.signal
+        });
+        setReactions(reactionsResponse.data);
+        
+      } catch (err) {
+        if (err.name !== 'AbortError' && err.name !== 'CanceledError') {
+          setError('Post not found');
+          console.error(err);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    checkAuth();
+    
+    return () => {
+      abortController.abort();
+    };
+  }, [slug]);
 
   const handleReaction = async (type) => {
     if (!user) {

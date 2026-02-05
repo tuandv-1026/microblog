@@ -550,6 +550,20 @@
   line-height: 1.6;
 }
 
+.post-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #888;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .read-more {
   color: #007bff;
   text-decoration: none;

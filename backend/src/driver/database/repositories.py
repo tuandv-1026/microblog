@@ -150,7 +150,11 @@ class SQLAlchemyPostRepository(PostRepository):
         sort_by: str = "newest",
     ) -> List[Post]:
         """Get all posts with optional filters."""
-        query = select(PostModel).options(selectinload(PostModel.categories))
+        query = select(PostModel).options(
+            selectinload(PostModel.categories),
+            selectinload(PostModel.comments),
+            selectinload(PostModel.reactions),
+        )
         
         if status:
             query = query.where(PostModel.status == PostStatusEnum(status.value))
@@ -186,6 +190,7 @@ class SQLAlchemyPostRepository(PostRepository):
         db_post.content_html = post.content_html
         db_post.excerpt = post.excerpt
         db_post.status = PostStatusEnum(post.status.value)
+        db_post.view_count = post.view_count
         db_post.published_at = post.published_at
         
         await self.session.flush()
@@ -220,8 +225,8 @@ class SQLAlchemyPostRepository(PostRepository):
     
     async def _to_entity(self, model: PostModel) -> Post:
         """Convert SQLAlchemy model to domain entity."""
-        # Load categories if not already loaded
-        await self.session.refresh(model, ['categories'])
+        # Load relationships if not already loaded
+        await self.session.refresh(model, ['categories', 'comments', 'reactions'])
         
         return Post(
             id=model.id,
@@ -245,6 +250,27 @@ class SQLAlchemyPostRepository(PostRepository):
                     created_at=cat.created_at,
                 )
                 for cat in model.categories
+            ],
+            comments=[
+                Comment(
+                    id=comment.id,
+                    content=comment.content,
+                    author_name=comment.author_name,
+                    author_email=comment.author_email,
+                    post_id=comment.post_id,
+                    created_at=comment.created_at,
+                )
+                for comment in model.comments
+            ],
+            reactions=[
+                Reaction(
+                    id=reaction.id,
+                    type=ReactionType(reaction.type.value),
+                    user_id=reaction.user_id,
+                    post_id=reaction.post_id,
+                    created_at=reaction.created_at,
+                )
+                for reaction in model.reactions
             ],
         )
 

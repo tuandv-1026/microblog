@@ -81,6 +81,25 @@ class Post:
         self.categories = categories or []
         self.comments = comments or []
         self.reactions = reactions or []
+    
+    @property
+    def comment_count(self) -> int:
+        """Get comment count."""
+        return len(self.comments)
+    
+    @property
+    def reaction_count(self) -> int:
+        """Get reaction count."""
+        return len(self.reactions)
+    
+    @property
+    def reaction_summary(self) -> dict:
+        """Get reaction summary grouped by type."""
+        summary = {}
+        for reaction in self.reactions:
+            reaction_type = reaction.type.value
+            summary[reaction_type] = summary.get(reaction_type, 0) + 1
+        return summary
 
 
 class Category:

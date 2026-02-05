@@ -112,6 +112,9 @@ class PostResponse(PostBase):
     status: PostStatus
     author_id: int
     view_count: int = 0
+    comment_count: int = 0
+    reaction_count: int = 0
+    reaction_summary: dict = {}
     published_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

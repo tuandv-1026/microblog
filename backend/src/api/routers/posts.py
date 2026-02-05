@@ -113,9 +113,7 @@ async def get_post_by_id(
 @router.get("/{slug}", response_model=PostResponse)
 async def get_post(
     slug: str,
-    response: Response,
     db: AsyncSession = Depends(get_db),
-    view_session_id: Optional[str] = Cookie(None),
 ):
     """Get a post by slug and increment view count."""
     post_repo = SQLAlchemyPostRepository(db)
@@ -124,21 +122,9 @@ async def get_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    # Generate or use existing view session ID
-    if not view_session_id:
-        view_session_id = str(uuid.uuid4())
-        response.set_cookie(
-            key="view_session_id",
-            value=view_session_id,
-            max_age=86400,  # 24 hours
-            httponly=True,
-            samesite="lax",
-        )
-    
-    # Increment view count if this is a new view in this session
-    if view_counter_service.should_increment_view(post.id, view_session_id):
-        post.view_count += 1
-        await post_repo.update(post)
+    # Increment view count on every view
+    post.view_count += 1
+    await post_repo.update(post)
     
     return PostResponse.model_validate(post)
 

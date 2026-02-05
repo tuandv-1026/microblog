@@ -16,6 +16,16 @@ function PostCard({ post }) {
     return textContent.substring(0, 150) + (textContent.length > 150 ? '...' : '');
   };
 
+  // Reaction emoji mapping
+  const reactionEmojis = {
+    'like': '👍',
+    'love': '❤️',
+    'haha': '😄',
+    'wow': '😮',
+    'sad': '😢',
+    'angry': '😠',
+  };
+
   return (
     <article className="post-card">
       <h2 className="post-title">
@@ -43,6 +53,20 @@ function PostCard({ post }) {
             : (post.content_html.substring(0, 200) + (post.content_html.length > 200 ? '...' : ''))
         }}
       />
+      
+      <div className="post-stats">
+        <span className="stat-item">💬 {post.comment_count || 0}</span>
+        {post.reaction_summary && Object.keys(post.reaction_summary).length > 0 ? (
+          Object.entries(post.reaction_summary).map(([type, count]) => (
+            <span key={type} className="stat-item">
+              {reactionEmojis[type] || '👍'} {count}
+            </span>
+          ))
+        ) : (
+          <span className="stat-item">❤️ 0</span>
+        )}
+        <span className="stat-item">👁️ {post.view_count || 0}</span>
+      </div>
       
       <Link to={`/posts/${encodeURIComponent(post.slug)}`} className="read-more">
         Read more →
