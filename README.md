@@ -9,6 +9,26 @@ A modern, full-featured personal blogging platform built with **FastAPI** (backe
 
 ---
 
+## 📸 Screenshots
+
+### Homepage - 3-Column Responsive Layout
+![Homepage](images/home.png)
+*Main feed with recent posts, categories sidebar, and sorting options*
+
+### Post Content View
+![Post Content](images/blog_content_screen.png)
+*Full post view with Markdown rendering, comments, and reactions*
+
+### Create Post - Markdown Editor
+![Create Post](images/create_post.png)
+*Split-view editor with toolbar, live preview, and category management*
+
+### Draft Management
+![Draft Posts](images/draff_post.png)
+*Manage unpublished posts with edit, publish, and delete options*
+
+---
+
 ## ✨ Features
 
 ### Core Features
