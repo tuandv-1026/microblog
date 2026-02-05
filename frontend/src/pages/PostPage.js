@@ -15,8 +15,6 @@ function PostPage() {
   
   // Comment form state
   const [commentForm, setCommentForm] = useState({
-    author_name: '',
-    author_email: '',
     content: '',
   });
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -98,15 +96,20 @@ function PostPage() {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     
-    if (!commentForm.author_name || !commentForm.author_email || !commentForm.content) {
-      alert('Please fill in all fields');
+    if (!user) {
+      alert('Please login to comment');
+      return;
+    }
+    
+    if (!commentForm.content) {
+      alert('Please enter a comment');
       return;
     }
 
     try {
       setCommentSubmitting(true);
       await api.post('/comments', {
-        ...commentForm,
+        content: commentForm.content,
         post_id: post.id,
       });
       
@@ -116,12 +119,14 @@ function PostPage() {
       
       // Clear form
       setCommentForm({
-        author_name: '',
-        author_email: '',
         content: '',
       });
     } catch (err) {
-      alert('Failed to post comment');
+      if (err.response?.status === 401) {
+        alert('Please login to comment');
+      } else {
+        alert('Failed to post comment');
+      }
       console.error(err);
     } finally {
       setCommentSubmitting(false);
@@ -236,34 +241,22 @@ function PostPage() {
           <h3>Comments ({comments.length})</h3>
           
           {/* Comment Form */}
-          <form className="comment-form" onSubmit={handleCommentSubmit}>
-            <div className="form-row">
-              <input 
-                type="text" 
-                placeholder="Your name" 
-                value={commentForm.author_name}
-                onChange={(e) => setCommentForm({...commentForm, author_name: e.target.value})}
-                required 
+          {user ? (
+            <form className="comment-form" onSubmit={handleCommentSubmit}>
+              <textarea 
+                placeholder="Write your comment..." 
+                rows="4" 
+                value={commentForm.content}
+                onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
+                required
               />
-              <input 
-                type="email" 
-                placeholder="Your email" 
-                value={commentForm.author_email}
-                onChange={(e) => setCommentForm({...commentForm, author_email: e.target.value})}
-                required 
-              />
-            </div>
-            <textarea 
-              placeholder="Your comment" 
-              rows="4" 
-              value={commentForm.content}
-              onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
-              required
-            />
-            <button type="submit" disabled={commentSubmitting}>
-              {commentSubmitting ? 'Posting...' : 'Post Comment'}
-            </button>
-          </form>
+              <button type="submit" disabled={commentSubmitting}>
+                {commentSubmitting ? 'Posting...' : 'Post Comment'}
+              </button>
+            </form>
+          ) : (
+            <p className="login-prompt">Please <a href="/login">login</a> to comment.</p>
+          )}
           
           {/* Comments List */}
           <div className="comments-list">

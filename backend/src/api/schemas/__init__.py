@@ -140,15 +140,20 @@ class CommentBase(BaseModel):
     author_email: EmailStr
 
 
-class CommentCreate(CommentBase):
+class CommentCreate(BaseModel):
     """Schema for creating a comment."""
+    content: str = Field(..., min_length=1, max_length=1000)
     post_id: int
 
 
-class CommentResponse(CommentBase):
+class CommentResponse(BaseModel):
     """Schema for comment response."""
     id: int
+    content: str
     post_id: int
+    user_id: int
+    author_name: str | None = None
+    author_email: str | None = None
     created_at: datetime
     
     class Config:

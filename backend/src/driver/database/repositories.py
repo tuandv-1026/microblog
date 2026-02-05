@@ -359,6 +359,7 @@ class SQLAlchemyCommentRepository(CommentRepository):
             author_name=comment.author_name,
             author_email=comment.author_email,
             post_id=comment.post_id,
+            user_id=comment.user_id,
         )
         self.session.add(db_comment)
         await self.session.flush()
@@ -391,6 +392,7 @@ class SQLAlchemyCommentRepository(CommentRepository):
             author_name=model.author_name,
             author_email=model.author_email,
             post_id=model.post_id,
+            user_id=model.user_id,
             created_at=model.created_at,
         )
 

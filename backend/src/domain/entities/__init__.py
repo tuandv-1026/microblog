@@ -130,6 +130,7 @@ class Comment:
         author_name: str = "",
         author_email: str = "",
         post_id: Optional[int] = None,
+        user_id: Optional[int] = None,
         created_at: Optional[datetime] = None,
     ):
         self.id = id
@@ -137,6 +138,7 @@ class Comment:
         self.author_name = author_name
         self.author_email = author_email
         self.post_id = post_id
+        self.user_id = user_id
         self.created_at = created_at or datetime.utcnow()
 
 

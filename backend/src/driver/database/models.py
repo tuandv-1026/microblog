@@ -50,6 +50,7 @@ class UserModel(Base):
     # Relationships
     posts = relationship("PostModel", back_populates="author", cascade="all, delete-orphan")
     reactions = relationship("ReactionModel", back_populates="user", cascade="all, delete-orphan")
+    comments = relationship("CommentModel", back_populates="user", cascade="all, delete-orphan")
 
 
 class PostModel(Base):
@@ -105,10 +106,12 @@ class CommentModel(Base):
     author_name = Column(String(100), nullable=False)
     author_email = Column(String(255), nullable=False)
     post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     
     # Relationships
     post = relationship("PostModel", back_populates="comments")
+    user = relationship("UserModel", back_populates="comments")
 
 
 class ReactionModel(Base):
