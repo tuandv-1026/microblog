@@ -58,6 +58,7 @@ class Post:
         excerpt: Optional[str] = None,
         status: PostStatus = PostStatus.DRAFT,
         author_id: Optional[int] = None,
+        view_count: int = 0,
         published_at: Optional[datetime] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -73,6 +74,7 @@ class Post:
         self.excerpt = excerpt
         self.status = status
         self.author_id = author_id
+        self.view_count = view_count
         self.published_at = published_at
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at or datetime.utcnow()

@@ -64,6 +64,7 @@ class PostModel(Base):
     excerpt = Column(String(500), nullable=True)
     status = Column(SQLEnum(PostStatusEnum), default=PostStatusEnum.DRAFT, nullable=False, index=True)
     author_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    view_count = Column(Integer, default=0, nullable=False)
     published_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

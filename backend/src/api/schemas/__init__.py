@@ -111,6 +111,7 @@ class PostResponse(PostBase):
     excerpt: Optional[str] = None
     status: PostStatus
     author_id: int
+    view_count: int = 0
     published_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

@@ -43,8 +43,8 @@ function MyDraftsPage() {
     }
 
     try {
-      await api.put(`/posts/${postId}`, { status: 'published' });
-      navigate(`/posts/${postSlug}`);
+      await api.post(`/posts/${postId}/publish`);
+      navigate(`/posts/${encodeURIComponent(postSlug)}`);
     } catch (err) {
       alert('Failed to publish draft');
     }

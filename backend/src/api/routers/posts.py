@@ -79,6 +79,21 @@ async def get_posts(
     return [PostResponse.model_validate(post) for post in posts]
 
 
+@router.get("/id/{post_id}", response_model=PostResponse)
+async def get_post_by_id(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a post by ID (for editing)."""
+    post_repo = SQLAlchemyPostRepository(db)
+    post = await post_repo.get_by_id(post_id)
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    return PostResponse.model_validate(post)
+
+
 @router.get("/{slug}", response_model=PostResponse)
 async def get_post(
     slug: str,
@@ -112,6 +127,7 @@ async def get_post(
     return PostResponse.model_validate(post)
 
 
+@router.put("/{post_id}", response_model=PostResponse)
 @router.patch("/{post_id}", response_model=PostResponse)
 async def update_post(
     post_id: int,
@@ -119,7 +135,7 @@ async def update_post(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a post."""
+    """Update a post (supports both PUT and PATCH)."""
     post_repo = SQLAlchemyPostRepository(db)
     
     # Verify ownership

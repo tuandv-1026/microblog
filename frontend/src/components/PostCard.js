@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -6,7 +7,7 @@ function PostCard({ post }) {
   return (
     <article className="post-card">
       <h2 className="post-title">
-        <a href={`/post/${post.slug}`}>{post.title}</a>
+        <Link to={`/posts/${encodeURIComponent(post.slug)}`}>{post.title}</Link>
       </h2>
       
       <div className="post-meta">
@@ -26,9 +27,9 @@ function PostCard({ post }) {
         {post.excerpt || 'No excerpt available...'}
       </div>
       
-      <a href={`/post/${post.slug}`} className="read-more">
+      <Link to={`/posts/${encodeURIComponent(post.slug)}`} className="read-more">
         Read more →
-      </a>
+      </Link>
     </article>
   );
 }

@@ -221,6 +221,7 @@ class SQLAlchemyPostRepository(PostRepository):
             excerpt=model.excerpt,
             status=PostStatus(model.status.value),
             author_id=model.author_id,
+            view_count=model.view_count,
             published_at=model.published_at,
             created_at=model.created_at,
             updated_at=model.updated_at,

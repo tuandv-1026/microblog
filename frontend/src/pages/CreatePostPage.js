@@ -31,7 +31,7 @@ function CreatePostPage() {
 
         // If editing, load post data
         if (isEditMode) {
-          const postRes = await api.get(`/posts/${id}`);
+          const postRes = await api.get(`/posts/id/${id}`);
           const post = postRes.data;
           setFormData({
             title: post.title,
@@ -82,11 +82,11 @@ function CreatePostPage() {
 
       if (isEditMode) {
         await api.put(`/posts/${id}`, payload);
-        navigate(`/posts/${formData.slug}`);
+        navigate(`/posts/${encodeURIComponent(formData.slug)}`);
       } else {
         const response = await api.post('/posts', payload);
         if (status === 'published') {
-          navigate(`/posts/${response.data.slug}`);
+          navigate(`/posts/${encodeURIComponent(response.data.slug)}`);
         } else {
           navigate('/my-drafts');
         }
