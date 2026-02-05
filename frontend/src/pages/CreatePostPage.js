@@ -17,7 +17,7 @@ function CreatePostPage() {
     category_ids: [],
   });
   const [categories, setCategories] = useState([]);
-  const [showPreview, setShowPreview] = useState(false);
+  const [viewMode, setViewMode] = useState('edit'); // 'edit', 'preview', 'split'
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [textareaRef, setTextareaRef] = useState(null);
@@ -102,6 +102,16 @@ function CreatePostPage() {
       const listText = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
       newText = `${beforeText}${listText}${afterText}`;
       cursorPos = start + listText.length;
+    } else if (syntax === 'hr') {
+      newText = `${beforeText}\n---\n${afterText}`;
+      cursorPos = start + 5;
+    } else if (syntax === 'table') {
+      const tableText = '\n| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n';
+      newText = `${beforeText}${tableText}${afterText}`;
+      cursorPos = start + tableText.length;
+    } else if (syntax === 'task') {
+      newText = `${beforeText}- [ ] ${selectedText || 'Task item'}${afterText}`;
+      cursorPos = start + 6 + (selectedText || 'Task item').length;
     } else {
       // For simple wrapping syntax (bold, italic, code, etc.)
       newText = `${beforeText}${textBefore}${selectedText || 'text'}${textAfter}${afterText}`;
@@ -155,15 +165,25 @@ function CreatePostPage() {
           <div className="editor-controls">
             <button
               type="button"
-              className={`btn-toggle ${!showPreview ? 'active' : ''}`}
-              onClick={() => setShowPreview(false)}
+              className={`btn-toggle ${viewMode === 'edit' ? 'active' : ''}`}
+              onClick={() => setViewMode('edit')}
+              title="Edit Only"
             >
-              Edit
+              ✏️ Edit
             </button>
             <button
               type="button"
-              className={`btn-toggle ${showPreview ? 'active' : ''}`}
-              onClick={() => setShowPreview(true)}
+              className={`btn-toggle ${viewMode === 'split' ? 'active' : ''}`}
+              onClick={() => setViewMode('split')}
+              title="Split View"
+            >
+              Split
+            </button>
+            <button
+              type="button"
+              className={`btn-toggle ${viewMode === 'preview' ? 'active' : ''}`}
+              onClick={() => setViewMode('preview')}
+              title="Preview Only"
             >
               Preview
             </button>
@@ -225,8 +245,8 @@ function CreatePostPage() {
           </div>
           
           <div className="editor-content">
-            {!showPreview ? (
-              <div className="form-group">
+            {viewMode !== 'preview' && (
+              <div className={`form-group ${viewMode === 'split' ? 'editor-split-left' : ''}`}>
                 <label>Content (Markdown)</label>
                 <div className="markdown-toolbar">
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h1', '# ', '')} title="Heading 1">
@@ -238,48 +258,57 @@ function CreatePostPage() {
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h3', '### ', '')} title="Heading 3">
                     <strong>H3</strong>
                   </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h4', '#### ', '')} title="Heading 4">
+                    <strong>H4</strong>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h5', '##### ', '')} title="Heading 5">
+                    <strong>H5</strong>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h6', '###### ', '')} title="Heading 6">
+                    <strong>H6</strong>
+                  </button>
                   <span className="toolbar-divider">|</span>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('bold', '**', '**')} title="Bold">
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('bold', '**', '**')} title="Bold (Ctrl+B)">
                     <strong>B</strong>
                   </button>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('italic', '*', '*')} title="Italic">
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('italic', '*', '*')} title="Italic (Ctrl+I)">
                     <em>I</em>
                   </button>
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('strikethrough', '~~', '~~')} title="Strikethrough">
                     <s>S</s>
                   </button>
                   <span className="toolbar-divider">|</span>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('link')} title="Link">
-                    🔗
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('ul')} title="Bullet List">
+                    UL
                   </button>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('image')} title="Image">
-                    🖼️
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('ol')} title="Numbered List">
+                    OL
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('task')} title="Task List">
+                    [ ]
+                  </button>
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('hr')} title="Horizontal Line">
+                    HR
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('link')} title="Link">
+                    Link
+                  </button>
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('image')} title="Image">
+                    Img
+                  </button>
+                  <button type="button" className="toolbar-btn toolbar-btn-text" onClick={() => insertMarkdown('table')} title="Table">
+                    Table
                   </button>
                   <span className="toolbar-divider">|</span>
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('code', '`', '`')} title="Inline Code">
-                    {'</>'}
+                    {'<>'}
                   </button>
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('code-block')} title="Code Block">
-                    {'{ }'}
-                  </button>
-                  <span className="toolbar-divider">|</span>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('ul')} title="Bullet List">
-                    •
-                  </button>
-                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('ol')} title="Numbered List">
-                    1.
+                    {'{}'}
                   </button>
                   <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('quote', '> ', '')} title="Quote">
-                    ❝
-                  </button>
-                  <span className="toolbar-divider">|</span>
-                  <button 
-                    type="button" 
-                    className="toolbar-btn toolbar-btn-preview" 
-                    onClick={() => setShowPreview(true)} 
-                    title="Preview"
-                  >
-                    👁️ Preview
+                    {'>'}
                   </button>
                 </div>
                 <textarea
@@ -292,17 +321,12 @@ function CreatePostPage() {
                   placeholder="Write your post in Markdown..."
                 ></textarea>
               </div>
-            ) : (
-              <div className="markdown-preview">
+            )}
+            
+            {viewMode !== 'edit' && (
+              <div className={`markdown-preview ${viewMode === 'split' ? 'editor-split-right' : ''}`}>
                 <div className="preview-header">
                   <label>Preview</label>
-                  <button 
-                    type="button" 
-                    className="btn-back-to-edit" 
-                    onClick={() => setShowPreview(false)}
-                  >
-                    ← Back to Edit
-                  </button>
                 </div>
                 <div className="preview-content">
                   <h1>{formData.title || 'Untitled Post'}</h1>

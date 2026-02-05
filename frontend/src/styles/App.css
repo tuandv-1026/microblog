@@ -1031,6 +1031,12 @@
   font-size: 14px;
 }
 
+.toolbar-btn-text {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+
 .toolbar-divider {
   color: #ccc;
   margin: 0 5px;
@@ -1056,6 +1062,32 @@
   resize: vertical;
   border-radius: 0 0 5px 5px !important;
   border-top: none !important;
+}
+
+.editor-content {
+  display: flex;
+  gap: 20px;
+}
+
+.editor-split-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-split-right {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0 !important;
+}
+
+.editor-split-left .markdown-editor {
+  height: 600px;
+  min-height: 600px;
+}
+
+.editor-split-right .preview-content {
+  height: 600px;
+  overflow-y: auto;
 }
 
 .markdown-preview {
