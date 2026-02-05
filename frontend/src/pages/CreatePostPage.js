@@ -17,6 +17,7 @@ function CreatePostPage() {
     category_ids: [],
   });
   const [categories, setCategories] = useState([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [viewMode, setViewMode] = useState('edit'); // 'edit', 'preview', 'split'
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,6 +70,31 @@ function CreatePostPage() {
       ? currentIds.filter(id => id !== categoryId)
       : [...currentIds, categoryId];
     setFormData({ ...formData, category_ids: newIds });
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    try {
+      const response = await api.post('/categories', {
+        name: newCategoryName.trim(),
+        slug: newCategoryName.toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .replace(/--+/g, '-')
+          .replace(/^-|-$/g, ''),
+      });
+      
+      const newCategory = response.data;
+      setCategories([...categories, newCategory]);
+      setFormData({ ...formData, category_ids: [...formData.category_ids, newCategory.id] });
+      setNewCategoryName('');
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to create category');
+    }
   };
 
   const insertMarkdown = (syntax, textBefore = '', textAfter = '') => {
@@ -230,17 +256,37 @@ function CreatePostPage() {
 
           <div className="form-group">
             <label>Categories</label>
-            <div className="category-select">
-              {categories.map((category) => (
-                <label key={category.id} className="category-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={formData.category_ids.includes(category.id)}
-                    onChange={() => handleCategoryToggle(category.id)}
-                  />
-                  <span>{category.name}</span>
-                </label>
-              ))}
+            <div className="category-section">
+              <div className="category-add">
+                <input
+                  type="text"
+                  className="category-input"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                  placeholder="Add new category..."
+                />
+                <button 
+                  type="button" 
+                  className="btn-add-category" 
+                  onClick={handleAddCategory}
+                  title="Add new category"
+                >
+                  + Add
+                </button>
+              </div>
+              <div className="category-select">
+                {categories.map((category) => (
+                  <label key={category.id} className="category-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={formData.category_ids.includes(category.id)}
+                      onChange={() => handleCategoryToggle(category.id)}
+                    />
+                    <span>{category.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           
