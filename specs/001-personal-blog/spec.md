@@ -63,7 +63,7 @@ A new user wants to register an account to post blogs and interact with content.
 
 ### User Story 4 - Create and Publish Blog Posts (Priority: P2)
 
-An authenticated user wants to write a blog post in Markdown, save it as a draft, preview the rendered output, assign categories, and publish it when ready. The system supports draft/publish workflow with clear state transitions.
+An authenticated user wants to write a blog post in Markdown using an enhanced editor with toolbar shortcuts, save it as a draft, preview the rendered output in split-view mode, assign or create categories, and publish it when ready. The system supports draft/publish workflow with clear state transitions.
 
 **Why this priority**: Content creation is the author's primary workflow. Must come after authentication (P2 dependency) but before engagement features.
 
@@ -71,18 +71,21 @@ An authenticated user wants to write a blog post in Markdown, save it as a draft
 
 **Acceptance Scenarios**:
 
-1. **Given** authenticated user clicks "New Post" button, **When** editor page loads, **Then** see Markdown editor with fields for title, content textarea, category selection, and draft/publish actions
-2. **Given** user types Markdown content, **When** clicking "Preview" button, **Then** see rendered HTML output in preview pane showing how post will appear when published
-3. **Given** user clicks "Save as Draft", **When** draft saves, **Then** post is stored with draft status, visible only to author in their drafts list, not on public homepage
-4. **Given** user has a draft post, **When** clicking "Publish", **Then** post status changes to published, appears on homepage timeline, and shows creation timestamp
-5. **Given** user assigns categories during creation, **When** post is published, **Then** post appears in selected category pages and category counts update on sidebar
-6. **Given** authenticated user views their own post, **When** post detail page loads, **Then** see "Edit" and "Delete" buttons accessible only to post author
+1. **Given** authenticated user clicks "New Post" button, **When** editor page loads, **Then** see Markdown editor with toolbar (headings H1-H6, bold, italic, strikethrough, lists, links, images, tables, code, quotes), category management, and draft/publish actions
+2. **Given** user types Markdown content, **When** selecting text and clicking toolbar buttons, **Then** Markdown syntax is inserted at cursor position or wraps selected text
+3. **Given** user clicks "Split" view mode, **When** editor switches to split view, **Then** see side-by-side editor and live preview panels updating in real-time
+4. **Given** user needs a new category, **When** typing category name in "Add Category" input and clicking "+ Add", **Then** category is created and automatically selected for current post
+5. **Given** user clicks "Save as Draft", **When** draft saves, **Then** post is stored with draft status, visible only to author in their drafts list, not on public homepage
+6. **Given** user has a draft post, **When** clicking "Publish", **Then** post status changes to published, appears on homepage timeline, and shows creation timestamp
+7. **Given** user assigns categories during creation, **When** post is published, **Then** post appears in selected category pages and category counts update on sidebar
+8. **Given** authenticated user views their own post, **When** post detail page loads, **Then** see "Edit" and "Delete" buttons accessible only to post author
+9. **Given** user toggles between Edit/Split/Preview modes, **When** switching views, **Then** content persists and view changes without losing work
 
 ---
 
 ### User Story 5 - Comment and React with Emojis (Priority: P3)
 
-An authenticated user wants to engage with blog posts by leaving comments and reacting with emoji (like 👍, haha 😂, angry 😠, sad 😢). Comments are text-based and displayed chronologically. Emoji reactions are counters displayed near the post.
+An authenticated user wants to engage with blog posts by leaving comments and reacting with emojis (like 👍, love ❤️, haha 😄, wow 😮, sad 😢, angry 😠). Comments display the user's username automatically from their logged-in account. Emoji reactions are counters displayed with detailed breakdown near the post.
 
 **Why this priority**: Engagement features enhance community but are not essential for core blog functionality (reading and writing). Can be deferred after authoring workflow is stable.
 
@@ -90,11 +93,12 @@ An authenticated user wants to engage with blog posts by leaving comments and re
 
 **Acceptance Scenarios**:
 
-1. **Given** authenticated user is viewing a published post, **When** scrolling to comments section, **Then** see existing comments (username, timestamp, text) and a comment input form
+1. **Given** authenticated user is viewing a published post, **When** scrolling to comments section, **Then** see existing comments (username from logged-in account, timestamp, text) and a comment input form
 2. **Given** authenticated user enters comment text, **When** submitting comment, **Then** comment appears immediately below post content with user's name and timestamp
-3. **Given** authenticated user clicks an emoji reaction button (like/haha/angry/sad), **When** reaction registers, **Then** emoji counter increments and user's reaction is highlighted to prevent duplicate clicks
+3. **Given** authenticated user clicks an emoji reaction button (like/love/haha/wow/sad/angry), **When** reaction registers, **Then** emoji counter increments and user's reaction is highlighted to prevent duplicate clicks
 4. **Given** user has already reacted with an emoji, **When** clicking the same emoji again, **Then** reaction is removed and counter decrements (toggle behavior)
-5. **Given** visitor is not logged in, **When** viewing post with comments and reactions, **Then** see existing comments and reaction counts but comment form and reaction buttons are disabled with "Login to interact" message
+5. **Given** visitor is not logged in, **When** viewing post with comments and reactions, **Then** see existing comments and reaction counts but comment form shows "Login to comment" message
+6. **Given** post has reactions, **When** viewing post card or post detail, **Then** see total reaction count and breakdown showing count per reaction type (e.g., "5 👍 3 ❤️ 2 😄")
 
 ---
 
@@ -133,7 +137,7 @@ A visitor wants to learn about the blog author by visiting a dedicated About Me 
 - **FR-001**: System MUST display homepage with 3-column layout on desktop (≥1024px): left sidebar (recent posts list), center column (post previews), right sidebar (categories and stats)
 - **FR-002**: System MUST adapt layout to single-column on mobile (<768px) with stacked sections: menu → post list → categories
 - **FR-003**: System MUST provide navigation menu with links to Home, Category pages, and About Me page, accessible from all pages
-- **FR-004**: Center column MUST display post previews containing: title, excerpt (first 150 chars of content), author name, creation date, view count, and like count
+- **FR-004**: Center column MUST display post previews containing: title, excerpt (first 150 chars of content), author name, creation date, view count, comment count, reaction count with breakdown by type, and formatted numbers (e.g., "1.2K views")
 - **FR-005**: Right sidebar MUST display categories ordered by post count (descending) with post counts shown as badges
 
 **Content Rendering**
@@ -146,59 +150,69 @@ A visitor wants to learn about the blog author by visiting a dedicated About Me 
 - **FR-010**: Homepage MUST provide sort controls: creation time (newest first, oldest first), like count (descending), view count (descending)
 - **FR-011**: Default sort order MUST be creation time descending (newest posts first)
 - **FR-012**: Category pages MUST display only posts tagged with selected category, maintaining same layout as homepage
-- **FR-013**: System MUST track view count for each post (increment on post detail page load by unique visitor per session)
+- **FR-013**: System MUST track view count for each post (increment on post detail page load every time, no session tracking)
 - **FR-014**: System MUST track like count for each post (sum of like emoji reactions)
+- **FR-015**: System MUST calculate and display comment count for each post (total number of comments)
+- **FR-016**: System MUST calculate and display reaction count with breakdown by type (e.g., "5 👍 3 ❤️ 2 😄")
 
 **Search**
-- **FR-015**: System MUST provide search input field accessible from homepage header
-- **FR-016**: Search MUST match query against post title AND author username (case-insensitive, partial match)
-- **FR-017**: Search results page MUST display matching posts in same preview format as homepage
-- **FR-018**: Search with no results MUST display "No posts found matching '[query]'" message
+- **FR-017**: System MUST provide search input field accessible from homepage header
+- **FR-018**: Search MUST match query against post title AND author username (case-insensitive, partial match)
+- **FR-019**: Search results page MUST display matching posts in same preview format as homepage
+- **FR-020**: Search with no results MUST display "No posts found matching '[query]'" message
 
 **User Authentication**
-- **FR-019**: System MUST provide registration form with fields: email (unique), username (unique), password, password confirmation
-- **FR-020**: System MUST validate email format (RFC 5322 compliant) and password strength (minimum 8 characters)
-- **FR-021**: System MUST hash passwords using industry-standard algorithm (bcrypt or Argon2) before storage
-- **FR-022**: System MUST provide login form with email and password fields
-- **FR-023**: Authenticated users MUST see personalized navigation: username display, "New Post" link, "My Drafts" link, "Logout" button
-- **FR-024**: System MUST maintain session state using secure cookies (HttpOnly, SameSite, HTTPS in production)
+- **FR-021**: System MUST provide registration form with fields: email (unique), username (unique), password, password confirmation
+- **FR-022**: System MUST validate email format (RFC 5322 compliant) and password strength (minimum 8 characters)
+- **FR-023**: System MUST hash passwords using industry-standard algorithm (bcrypt or Argon2) before storage
+- **FR-024**: System MUST provide login form with email and password fields
+- **FR-025**: Authenticated users MUST see personalized navigation: username display, "New Post" link, "My Drafts" link, "Logout" button
+- **FR-026**: System MUST maintain session state using secure cookies (HttpOnly, SameSite, HTTPS in production)
 
 **Post Creation & Publishing**
-- **FR-025**: Authenticated users MUST be able to create new posts via "New Post" form with fields: title, Markdown content, category selection (multi-select)
-- **FR-026**: System MUST support draft status: drafts visible only to author, not included in public homepage or search
-- **FR-027**: System MUST provide "Save as Draft" and "Publish" actions in post editor
-- **FR-028**: System MUST provide live preview of rendered Markdown in editor (side-by-side or toggle view)
-- **FR-029**: Published posts MUST display creation timestamp and author information
-- **FR-030**: Post authors MUST be able to edit their own posts (title, content, categories) and delete their posts
-- **FR-031**: System MUST validate post has title (non-empty) and content before allowing publish
+- **FR-027**: Authenticated users MUST be able to create new posts via "New Post" form with fields: title, Markdown content, category selection (multi-select) or category creation
+- **FR-028**: System MUST provide Markdown toolbar with buttons for: H1-H6 headings, bold, italic, strikethrough, bullet lists, numbered lists, task lists, horizontal rules, links, images, tables, inline code, code blocks, and quotes
+- **FR-029**: System MUST support three view modes: Edit (editor only), Split (side-by-side editor and preview), Preview (preview only)
+- **FR-030**: System MUST provide live preview of rendered Markdown that updates in real-time in Split view mode
+- **FR-031**: System MUST allow users to create new categories directly from post editor with input field and "+ Add" button
+- **FR-032**: Newly created categories MUST be automatically selected for the current post
+- **FR-033**: System MUST support draft status: drafts visible only to author, not included in public homepage or search
+- **FR-034**: System MUST provide "Save as Draft" and "Publish" actions in post editor
+- **FR-035**: Published posts MUST display creation timestamp and author information
+- **FR-036**: Post authors MUST be able to edit their own posts (title, content, categories) and delete their posts
+- **FR-037**: System MUST validate post has title (non-empty) and content before allowing publish
+- **FR-038**: Toolbar buttons MUST insert Markdown syntax at cursor position or wrap selected text
 
 **Comments**
-- **FR-032**: Authenticated users MUST be able to comment on published posts
-- **FR-033**: Comments MUST display: author username, timestamp, and comment text
-- **FR-034**: Comments MUST be ordered chronologically (oldest first) below post content
-- **FR-035**: Non-authenticated visitors MUST see existing comments but cannot submit new comments
-- **FR-036**: Comment form MUST be disabled for non-authenticated users with "Login to comment" message
+- **FR-039**: Authenticated users MUST be able to comment on published posts
+- **FR-040**: Comments MUST automatically use the logged-in user's username (no manual name/email entry)
+- **FR-041**: Comments table MUST store user_id as foreign key to users table
+- **FR-042**: Comments MUST display: author username (from user account), timestamp, and comment text
+- **FR-043**: Comments MUST be ordered chronologically (oldest first) below post content
+- **FR-044**: Non-authenticated visitors MUST see existing comments but cannot submit new comments
+- **FR-045**: Comment form MUST show "Login to comment" message for non-authenticated users
 
 **Emoji Reactions**
-- **FR-037**: System MUST support four emoji reactions per post: like 👍, haha 😂, angry 😠, sad 😢
-- **FR-038**: Authenticated users MUST be able to toggle reactions (click to add, click again to remove)
-- **FR-039**: Each user can only react once per emoji type per post (cannot like twice)
-- **FR-040**: System MUST display reaction counts next to each emoji button
-- **FR-041**: Non-authenticated visitors MUST see reaction counts but cannot react (buttons disabled)
+- **FR-046**: System MUST support six emoji reactions per post: like 👍, love ❤️, haha 😄, wow 😮, sad 😢, angry 😠
+- **FR-047**: Authenticated users MUST be able to toggle reactions (click to add, click again to remove)
+- **FR-048**: Each user can only react once per emoji type per post (cannot like twice)
+- **FR-049**: System MUST display reaction counts next to each emoji button
+- **FR-050**: System MUST display reaction summary showing breakdown by type (e.g., "5 👍 3 ❤️ 2 😄") on post cards
+- **FR-051**: Non-authenticated visitors MUST see reaction counts but cannot react (buttons disabled)
 
 **About Me Page**
-- **FR-042**: System MUST provide About Me page accessible via navigation menu
-- **FR-043**: About Me page MUST display author bio content rendered from Markdown
-- **FR-044**: Blog owner (first registered user or designated admin) MUST be able to edit About Me content via editor form
-- **FR-045**: About Me page MAY include optional profile photo (uploaded image or external URL)
+- **FR-052**: System MUST provide About Me page accessible via navigation menu
+- **FR-053**: About Me page MUST display author bio content rendered from Markdown
+- **FR-054**: Blog owner (first registered user or designated admin) MUST be able to edit About Me content via editor form
+- **FR-055**: About Me page MAY include optional profile photo (uploaded image or external URL)
 
 ### Key Entities
 
 - **User**: Represents registered account with email (unique), username (unique), hashed password, registration timestamp, and role (author/admin)
-- **Post**: Represents blog post with title, content (Markdown text), author (User relationship), creation timestamp, status (draft/published), view count, and categories (many-to-many relationship)
-- **Category**: Represents content tag with name (unique) and slug (URL-friendly), related to Posts via many-to-many relationship
-- **Comment**: Represents user comment with text, author (User relationship), post (Post relationship), and timestamp
-- **Reaction**: Represents emoji reaction with type (like/haha/angry/sad), user (User relationship), post (Post relationship), and timestamp (ensures one reaction per user per type per post)
+- **Post**: Represents blog post with title, content (Markdown text), author (User relationship), creation timestamp, status (draft/published), view count (increments on every view), comment_count (calculated), reaction_count (calculated), reaction_summary (breakdown by type), and categories (many-to-many relationship)
+- **Category**: Represents content tag with name (unique) and slug (URL-friendly), related to Posts via many-to-many relationship, can be created by users during post creation
+- **Comment**: Represents user comment with text, author (User relationship via user_id foreign key), post (Post relationship), and timestamp
+- **Reaction**: Represents emoji reaction with type (like/love/haha/wow/sad/angry), user (User relationship), post (Post relationship), and timestamp (ensures one reaction per user per type per post)
 
 ## Success Criteria *(mandatory)*
 
@@ -219,12 +233,16 @@ A visitor wants to learn about the blog author by visiting a dedicated About Me 
 
 - Single blog owner/admin model: first registered user or designated account has special privileges (edit About Me, moderate comments if moderation added later)
 - Category assignment is optional: posts without categories still appear on homepage but not in category-filtered views
-- View count uses simple session-based tracking: same visitor viewing post multiple times in one session counts as 1 view
+- Categories can be created by any authenticated user during post creation
+- View count increments on every page view without session deduplication (simpler implementation, always increments)
 - No comment moderation in v1: comments appear immediately (can be added as FR in future iteration if spam becomes issue)
+- Comments automatically use logged-in user's username and email from their account (no manual entry)
 - Profile photos are optional and can be external URLs (e.g., Gravatar) to avoid file upload complexity in v1
 - Draft posts are not counted in category post counts shown on sidebar
 - Sort and filter options do not persist across sessions (default to newest first on each visit)
 - Search is simple text matching (no full-text search indexing or advanced query syntax in v1)
+- Emoji reactions include 6 types: like, love, haha, wow, sad, angry (expanded from 4)
+- React.StrictMode double-render is handled with AbortController to prevent duplicate API calls
 
 ## Out of Scope (Future Considerations)
 
