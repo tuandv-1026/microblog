@@ -146,6 +146,7 @@ class SQLAlchemyPostRepository(PostRepository):
         category_id: Optional[int] = None,
         limit: int = 10,
         offset: int = 0,
+        sort_by: str = "newest",
     ) -> List[Post]:
         """Get all posts with optional filters."""
         query = select(PostModel).options(selectinload(PostModel.categories))
@@ -156,7 +157,13 @@ class SQLAlchemyPostRepository(PostRepository):
         if category_id:
             query = query.join(PostModel.categories).where(CategoryModel.id == category_id)
         
-        query = query.order_by(PostModel.created_at.desc()).limit(limit).offset(offset)
+        # Apply sorting
+        if sort_by == "oldest":
+            query = query.order_by(PostModel.created_at.asc())
+        else:  # newest (default)
+            query = query.order_by(PostModel.created_at.desc())
+        
+        query = query.limit(limit).offset(offset)
         
         result = await self.session.execute(query)
         db_posts = result.scalars().all()

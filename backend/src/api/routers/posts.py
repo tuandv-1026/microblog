@@ -62,6 +62,7 @@ async def get_posts(
     category_id: Optional[int] = None,
     limit: int = 10,
     offset: int = 0,
+    sort_by: str = "newest",
     db: AsyncSession = Depends(get_db),
 ):
     """Get all posts with optional filters."""
@@ -74,6 +75,7 @@ async def get_posts(
         category_id=category_id,
         limit=limit,
         offset=offset,
+        sort_by=sort_by,
     )
     
     return [PostResponse.model_validate(post) for post in posts]

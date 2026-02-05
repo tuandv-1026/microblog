@@ -21,7 +21,7 @@ function HomePage() {
         
         // Fetch posts
         const postsResponse = await api.get(
-          `/posts?status=published&limit=${limit}&offset=${(page - 1) * limit}`
+          `/posts?status=published&limit=${limit}&offset=${(page - 1) * limit}&sort_by=${sortBy}`
         );
         setPosts(postsResponse.data);
         setHasMore(postsResponse.data.length === limit);

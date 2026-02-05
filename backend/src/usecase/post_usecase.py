@@ -140,6 +140,7 @@ class GetPostsUseCase:
         category_id: Optional[int] = None,
         limit: int = 10,
         offset: int = 0,
+        sort_by: str = "newest",
     ) -> List[Post]:
         """Get posts with optional filters."""
         return await self.post_repository.get_all(
@@ -147,6 +148,7 @@ class GetPostsUseCase:
             category_id=category_id,
             limit=limit,
             offset=offset,
+            sort_by=sort_by,
         )
 
 
