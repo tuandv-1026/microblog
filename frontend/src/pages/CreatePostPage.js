@@ -20,6 +20,7 @@ function CreatePostPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [textareaRef, setTextareaRef] = useState(null);
 
   // Load categories and post data (if editing)
   useEffect(() => {
@@ -68,6 +69,54 @@ function CreatePostPage() {
       ? currentIds.filter(id => id !== categoryId)
       : [...currentIds, categoryId];
     setFormData({ ...formData, category_ids: newIds });
+  };
+
+  const insertMarkdown = (syntax, textBefore = '', textAfter = '') => {
+    if (!textareaRef) return;
+    
+    const start = textareaRef.selectionStart;
+    const end = textareaRef.selectionEnd;
+    const selectedText = formData.content_markdown.substring(start, end);
+    const beforeText = formData.content_markdown.substring(0, start);
+    const afterText = formData.content_markdown.substring(end);
+    
+    let newText;
+    let cursorPos;
+    
+    if (syntax === 'link') {
+      newText = `${beforeText}[${selectedText || 'link text'}](url)${afterText}`;
+      cursorPos = start + (selectedText ? selectedText.length + 3 : 1);
+    } else if (syntax === 'image') {
+      newText = `${beforeText}![${selectedText || 'alt text'}](image-url)${afterText}`;
+      cursorPos = start + (selectedText ? selectedText.length + 4 : 2);
+    } else if (syntax === 'code-block') {
+      newText = `${beforeText}\`\`\`\n${selectedText || 'code'}\n\`\`\`${afterText}`;
+      cursorPos = start + 4;
+    } else if (syntax === 'ul') {
+      const lines = (selectedText || 'List item').split('\n');
+      const listText = lines.map(line => `- ${line}`).join('\n');
+      newText = `${beforeText}${listText}${afterText}`;
+      cursorPos = start + listText.length;
+    } else if (syntax === 'ol') {
+      const lines = (selectedText || 'List item').split('\n');
+      const listText = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
+      newText = `${beforeText}${listText}${afterText}`;
+      cursorPos = start + listText.length;
+    } else {
+      // For simple wrapping syntax (bold, italic, code, etc.)
+      newText = `${beforeText}${textBefore}${selectedText || 'text'}${textAfter}${afterText}`;
+      cursorPos = selectedText 
+        ? start + textBefore.length + selectedText.length + textAfter.length
+        : start + textBefore.length;
+    }
+    
+    setFormData({ ...formData, content_markdown: newText });
+    
+    // Restore cursor position
+    setTimeout(() => {
+      textareaRef.focus();
+      textareaRef.setSelectionRange(cursorPos, cursorPos);
+    }, 0);
   };
 
   const handleSubmit = async (status) => {
@@ -179,32 +228,82 @@ function CreatePostPage() {
             {!showPreview ? (
               <div className="form-group">
                 <label>Content (Markdown)</label>
+                <div className="markdown-toolbar">
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h1', '# ', '')} title="Heading 1">
+                    <strong>H1</strong>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h2', '## ', '')} title="Heading 2">
+                    <strong>H2</strong>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('h3', '### ', '')} title="Heading 3">
+                    <strong>H3</strong>
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('bold', '**', '**')} title="Bold">
+                    <strong>B</strong>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('italic', '*', '*')} title="Italic">
+                    <em>I</em>
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('strikethrough', '~~', '~~')} title="Strikethrough">
+                    <s>S</s>
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('link')} title="Link">
+                    🔗
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('image')} title="Image">
+                    🖼️
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('code', '`', '`')} title="Inline Code">
+                    {'</>'}
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('code-block')} title="Code Block">
+                    {'{ }'}
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('ul')} title="Bullet List">
+                    •
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('ol')} title="Numbered List">
+                    1.
+                  </button>
+                  <button type="button" className="toolbar-btn" onClick={() => insertMarkdown('quote', '> ', '')} title="Quote">
+                    ❝
+                  </button>
+                  <span className="toolbar-divider">|</span>
+                  <button 
+                    type="button" 
+                    className="toolbar-btn toolbar-btn-preview" 
+                    onClick={() => setShowPreview(true)} 
+                    title="Preview"
+                  >
+                    👁️ Preview
+                  </button>
+                </div>
                 <textarea
+                  ref={setTextareaRef}
                   className="markdown-editor"
                   value={formData.content_markdown}
                   onChange={(e) => setFormData({ ...formData, content_markdown: e.target.value })}
                   rows="25"
                   required
-                  placeholder="Write your post in Markdown...
-
-**Markdown Syntax:**
-# Heading 1
-## Heading 2
-**bold** *italic*
-[link](url)
-![image](url)
-- List item
-> Quote
-\`code\`
-\`\`\`
-code block
-\`\`\`
-"
+                  placeholder="Write your post in Markdown..."
                 ></textarea>
               </div>
             ) : (
               <div className="markdown-preview">
-                <label>Preview</label>
+                <div className="preview-header">
+                  <label>Preview</label>
+                  <button 
+                    type="button" 
+                    className="btn-back-to-edit" 
+                    onClick={() => setShowPreview(false)}
+                  >
+                    ← Back to Edit
+                  </button>
+                </div>
                 <div className="preview-content">
                   <h1>{formData.title || 'Untitled Post'}</h1>
                   {formData.excerpt && <p className="excerpt">{formData.excerpt}</p>}
