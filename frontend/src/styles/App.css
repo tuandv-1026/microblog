@@ -552,16 +552,40 @@
 
 .post-stats {
   display: flex;
-  gap: 15px;
+  gap: 20px;
+  align-items: center;
   margin-bottom: 15px;
-  font-size: 14px;
-  color: #888;
+  padding: 12px 0;
+  border-top: 1px solid #f0f0f0;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  padding: 4px 12px;
+  background: #f8f9fa;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.stat-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.stat-item.comments {
+  color: #007bff;
+}
+
+.stat-item.reactions {
+  color: #dc3545;
+}
+
+.stat-item.views {
+  color: #6c757d;
 }
 
 .read-more {

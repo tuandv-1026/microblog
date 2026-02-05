@@ -26,6 +26,14 @@ function PostCard({ post }) {
     'angry': '😠',
   };
 
+  // Format view count
+  const formatViews = (count) => {
+    if (!count) return '0';
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
   return (
     <article className="post-card">
       <h2 className="post-title">
@@ -55,17 +63,26 @@ function PostCard({ post }) {
       />
       
       <div className="post-stats">
-        <span className="stat-item">💬 {post.comment_count || 0}</span>
+        <span className="stat-item comments">
+          <span role="img" aria-label="comments">💬</span>
+          <span>{post.comment_count || 0}</span>
+        </span>
         {post.reaction_summary && Object.keys(post.reaction_summary).length > 0 ? (
           Object.entries(post.reaction_summary).map(([type, count]) => (
-            <span key={type} className="stat-item">
-              {reactionEmojis[type] || '👍'} {count}
+            <span key={type} className="stat-item reactions">
+              <span role="img" aria-label={type}>{reactionEmojis[type] || '👍'}</span>
+              <span>{count}</span>
             </span>
           ))
         ) : (
-          <span className="stat-item">❤️ 0</span>
+          <span className="stat-item reactions">
+            <span role="img" aria-label="reactions">❤️</span>
+            <span>0</span>
+          </span>
         )}
-        <span className="stat-item">👁️ {post.view_count || 0}</span>
+        <span className="stat-item views">
+          <span>{formatViews(post.view_count)} views</span>
+        </span>
       </div>
       
       <Link to={`/posts/${encodeURIComponent(post.slug)}`} className="read-more">
