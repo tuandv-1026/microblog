@@ -144,6 +144,7 @@ class SQLAlchemyPostRepository(PostRepository):
         self,
         status: Optional[PostStatus] = None,
         category_id: Optional[int] = None,
+        author_id: Optional[int] = None,
         limit: int = 10,
         offset: int = 0,
         sort_by: str = "newest",
@@ -156,6 +157,9 @@ class SQLAlchemyPostRepository(PostRepository):
         
         if category_id:
             query = query.join(PostModel.categories).where(CategoryModel.id == category_id)
+        
+        if author_id:
+            query = query.where(PostModel.author_id == author_id)
         
         # Apply sorting
         if sort_by == "oldest":

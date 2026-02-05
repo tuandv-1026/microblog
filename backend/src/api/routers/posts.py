@@ -60,19 +60,33 @@ async def create_post(
 async def get_posts(
     status: Optional[str] = None,
     category_id: Optional[int] = None,
+    author_id: Optional[int] = None,
     limit: int = 10,
     offset: int = 0,
     sort_by: str = "newest",
+    session_user_id: Optional[str] = Cookie(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Get all posts with optional filters."""
     post_repo = SQLAlchemyPostRepository(db)
     use_case = GetPostsUseCase(post_repo)
     
+    # Security check: only allow filtering by author_id for own drafts
+    if status == 'draft':
+        if not session_user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        try:
+            current_user_id = int(session_user_id)
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        # Force author_id to current user for draft queries
+        author_id = current_user_id
+    
     post_status = PostStatus(status) if status else None
     posts = await use_case.execute(
         status=post_status,
         category_id=category_id,
+        author_id=author_id,
         limit=limit,
         offset=offset,
         sort_by=sort_by,

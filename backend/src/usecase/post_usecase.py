@@ -138,6 +138,7 @@ class GetPostsUseCase:
         self,
         status: Optional[PostStatus] = None,
         category_id: Optional[int] = None,
+        author_id: Optional[int] = None,
         limit: int = 10,
         offset: int = 0,
         sort_by: str = "newest",
@@ -146,6 +147,7 @@ class GetPostsUseCase:
         return await self.post_repository.get_all(
             status=status,
             category_id=category_id,
+            author_id=author_id,
             limit=limit,
             offset=offset,
             sort_by=sort_by,
